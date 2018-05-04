@@ -1,0 +1,20 @@
+@charset "UTF-8";
+
+.tdTextCenter
+{
+	text-align:center !important;
+}
+.trData:hover
+{
+	cursor:pointer;
+}
+.marginTop10px
+{
+	margin-top:10px !important;
+}
+.requiredFieldM9
+{
+	text-weight:bold;
+	color:red;
+	vertical-align:middle;
+}

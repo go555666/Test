@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="user">
+    
+    <resultMap type="com.ideal.lands.user.dto.UserDTO" id="userInfoResult">
+    	<result column = "UM_NO_SQ_PK" property="intUmNoSqPk" />
+    	<result column = "USER_ID" property="strUserId" />
+    	<result column = "USER_PW" property="strUserPw" />
+    	<result column = "USER_NAME" property="strUserName" />
+    	<result column = "USER_EMAIL" property="strUserEmail" />
+    	<result column = "USER_CONTACT" property="strUserContact" />
+    	<result column = "USER_AUTH" property="strUserAuth" />
+    	<result column = "USER_PIC_URL" property="strUserPicUrl" />
+    	<result column = "USER_LVL" property="strUserLvl" />
+    	<result column = "DM_NO_SQL" property="strDmNoSql" />
+    	<result column = "USER_BDAY" property="strUserBday" />
+    	<result column = "USE_YN" property="strUseYn" />
+    	<result column = "REG_ID" property="strRegId" />
+    	<result column = "REG_IP" property="strRegIp" />
+    	<result column = "REG_DATE" property="strRegDate" />
+    	<result column = "UPDT_ID" property="strUpdtId" />
+    	<result column = "UPDT_IP" property="strUpdtIp" />
+    	<result column = "UPDT_DATE" property="strUpdtDate" />
+    </resultMap>
+        
+    <select id="selUserInfo" parameterType="java.util.Map" resultMap="userInfoResult">
+        <![CDATA[
+            SELECT 
+            	UM.UM_NO_SQ_PK,
+            	UM.USER_ID,
+            	UM.USER_PW,
+            	UM.USER_NAME,
+            	UM.USER_EMAIL,
+            	UM.USER_CONTACT,
+            	UM.USER_AUTH,
+            	UM.USER_PIC_URL,
+            	UM.USER_BDAY,
+            	UM.USER_LVL,
+            	UM.DM_NO_SQ,
+            	UM.USE_YN,
+            	UM.REG_ID,
+            	UM.REG_IP,
+            	DATE_FORMAT(UM.REG_DATE, '%d-%M-%Y %H:%i:%s') AS REG_DATE,
+            	UM.UPDT_ID,
+            	UM.UPDT_IP,
+            	DATE_FORMAT(UM.UPDT_DATE, '%d-%M-%Y %H:%i:%s') AS UPDT_DATE
+            FROM USER_MAST UM
+            WHERE UM.USER_ID = '${userId}'
+            AND UM.USER_PW = '${userPw}'
+            AND UM.USE_YN = 'Y'
+        ]]>
+    </select>
+    
+    <select id="selDealerInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+	    		DM.DM_NO_SQ_PK,
+	    		DM.DEALER_SCORES,
+	    		DM.DEALER_CANCEL_CNT,
+	    		DM.DEALER_POINT,
+	    		DM.DEALER_FEEDBACK_YN,
+	    		DM.REMARK1,
+	    		DM.REMARK2
+    		FROM DEALER_MAST DM
+    		WHERE 1=1
+    	]]>
+    	<if test="dmNoSq != null and dmNoSq != ''">
+    		<![CDATA[
+    			AND DM.DM_NO_SQ_PK = '${dmNoSq}'
+    		]]>
+    	</if>
+    </select>
+    
+    <insert id="insAtdLog" parameterType="java.util.Map">
+	    INSERT INTO ATD_LOG_MAST
+		(
+			UM_NO_SQ,
+			ALM_TYPE,
+			REG_IP,
+			REG_DATE
+		)
+		VALUES
+		(
+			#{intUmNoSqPk},
+			'${strAtdType}',
+			'${strRegIp}',
+			SYSDATE()
+		)
+    </insert>
+    
+    <!-- 출퇴근 카운트 -->
+    <select id="selAtdLogCount" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+    			COUNT(*) TOTAL_ROW_COUNT
+    		FROM ATD_LOG_MAST ALM
+    		LEFT JOIN USER_MAST UM ON (ALM.UM_NO_SQ = UM.UM_NO_SQ_PK)
+    		WHERE 1=1
+   		]]>
+    		<if test="strUserName == null or strUserName == ''">
+	    		<![CDATA[	AND ALM.UM_NO_SQ = #{intUmNoSq}	]]>
+    		</if>
+    		<if test="strUserName != null and strUserName != ''">
+    			<![CDATA[	AND	UM.USER_NAME = #{strUserName}]]>
+    		</if>
+    		<if test="strSDate != null and strSDate != ''">
+    			<if test="strEDate != null and strEDate != ''">
+    				<![CDATA[
+    					AND ALM.REG_DATE >= '${strSDate}'
+    					AND ALM.REG_DATE <= '${strEDate}'
+    				]]>
+    			</if>
+    		</if>
+    	<![CDATA[
+    		ORDER BY ALM.REG_DATE DESC
+    	]]>
+    </select>    
+    
+    <!-- 출퇴근 리스트 -->
+    <select id="selAtdLog" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+    			UM.USER_NAME,
+    			ALM.ALM_TYPE,
+    			ALM.REG_IP,
+    			DATE_FORMAT(ALM.REG_DATE, '%d-%M-%Y %H:%i:%s') AS REG_DATE
+    		FROM ATD_LOG_MAST ALM
+    		LEFT JOIN USER_MAST UM ON (ALM.UM_NO_SQ = UM.UM_NO_SQ_PK)
+    		WHERE 1=1
+    		]]>
+    		<if test="strUserName == null or strUserName == ''">
+	    		<![CDATA[	AND ALM.UM_NO_SQ = #{intUmNoSq}	]]>
+    		</if>
+    		<if test="strUserName != null and strUserName != ''">
+    			<![CDATA[	AND	UM.USER_NAME = #{strUserName}]]>
+    		</if>
+    		<if test="strSDate != null and strSDate != ''">
+    			<if test="strEDate != null and strEDate != ''">
+    				<![CDATA[
+    					AND ALM.REG_DATE >= '${strSDate}'
+    					AND ALM.REG_DATE <= '${strEDate}'
+    				]]>
+    			</if>
+    		</if>
+    	<![CDATA[
+    		ORDER BY ALM.REG_DATE DESC
+    	]]>
+    	<if test="intDifference != null and intDifference != ''">
+    		<if test="(intOffset != null and intOffset != '') or intOffset == 0">
+	    		<![CDATA[ LIMIT	#{intDifference}	]]>
+    						
+	    		<![CDATA[ OFFSET #{intOffset}	]]>
+    						
+    		</if>
+    	</if>
+    </select>
+    
+    <!-- 유저리스트 카운트 -->
+    <select id="selUserListCount" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT COUNT(*) TOTAL_ROW_COUNT
+    		FROM USER_MAST UM
+    		WHERE 1=1
+    	]]>
+    	<if test="strUserName != null and strUserName != ''">
+    		<![CDATA[	UM.USER_NAME = ${strUserName}	]]>
+    	</if>
+    </select>
+    
+    <!-- 유저리스트 조회 -->
+    <select id="selUserList" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT 
+    			UM.UM_NO_SQ_PK,
+    			UM.USER_ID,
+    			UM.USER_PW,
+    			UM.USER_NAME,
+    			UM.USER_EMAIL,
+    			UM.USER_CONTACT,
+    			UM.USER_AUTH,
+    			UM.USER_LVL,
+    			UM.DM_NO_SQ,
+    			UM.USER_PIC_URL,
+    			UM.USER_BDAY,
+    			UM.USE_YN,
+    			UM.REG_ID,
+    			UM.REG_IP,
+    			DATE_FORMAT(UM.REG_DATE, '%d-%M-%Y') AS REG_DATE,
+    			UM.UPDT_ID,
+    			UM.UPDT_IP,
+    			DATE_FORMAT(UM.UPDT_DATE, '%d-%M-%Y') AS UPDT_DATE
+    		FROM USER_MAST UM
+    		WHERE 1=1
+    	]]>
+    	<if test="strUserName != null and strUserName != ''">
+    		<![CDATA[	UM.USER_NAME = ${strUserName}	]]>
+    	</if>
+    	<![CDATA[
+    		ORDER BY UM.UM_NO_SQ_PK
+    	]]>
+    	<if test="intDifference != null and intDifference != ''">
+    		<if test="(intOffset != null and intOffset != '') or intOffset == 0">
+	    		<![CDATA[ LIMIT	#{intDifference}	]]>
+    						
+	    		<![CDATA[ OFFSET #{intOffset}	]]>
+    						
+    		</if>
+    	</if>
+    </select>
+    
+    <update id="updtUserData" parameterType="java.util.Map">
+    	<![CDATA[
+    		UPDATE USER_MAST UM
+    		SET USER_ID = '${userId}'
+    	]]>
+    	<if test="userPw != null and userPw != ''">
+    		<![CDATA[	,USER_PW = '${userPw}'	]]>
+    	</if>
+    	<if test="userName != null and userName != ''">
+    		<![CDATA[	,USER_NAME = '${userName}'	]]>
+    	</if>
+    	<if test="userLvl != null and user != ''">
+    		<![CDATA[	,USER_LVL = '${userLvl}'	]]>
+    	</if>
+    	<if test="dmNoSq != null and dmNoSq != ''">
+    		<![CDATA[	,DM_NO_SQ = '${dmNoSq}'	]]>
+    	</if>
+    	<if test="userEmail != null and userEmail != ''">
+    		<![CDATA[	,USER_EMAIL = '${userEmail}'	]]>
+    	</if>
+    	<if test="userBDay != null and userBDay != ''">
+    		<![CDATA[	,USER_BDAY = '${userBDay}'	]]>
+    	</if>
+    	<if test="userContact != null and userContact != ''">
+    		<![CDATA[	,USER_CONTACT = '${userContact}'	]]>
+    	</if>
+    	<if test="userAuth != null and userAuth != ''">
+    		<![CDATA[	,USER_AUTH = '${userAuth}'	]]>
+    	</if>
+    	<if test="userPicUrl != null and userPicUrl != ''">
+    		<![CDATA[	,USER_PIC_URL = '${userPicUrl}'	]]>
+    	</if>
+    	<![CDATA[
+    		,UPDT_ID = '${updtId}'
+    		,UPDT_IP = '${updtIp}'
+    		,UPDT_DATE = SYSDATE()
+    		
+    		WHERE UM_NO_SQ_PK = #{umNoSqPk}
+    	]]>
+    </update>
+    
+    <!-- 유저 회원가입 -->
+   	<insert id="insUserData" parameterType="java.util.Map">
+   		<![CDATA[
+   			INSERT INTO USER_MAST
+   			(
+   				USER_ID
+   				,USER_PW
+   				,USER_NAME
+   		]]>
+   		<if test="userPicUrl != null and userPicUrl != ''">
+    		<![CDATA[	,USER_PIC_URL = '${userPicUrl}'	]]>
+    	</if>
+    	<if test="userContact != null and userContact != ''">
+    		<![CDATA[	,USER_CONTACT = '${userContact}'	]]>
+    	</if>
+		<if test="userEmail != null and userEmail != ''">
+			<![CDATA[	,USER_EMAIL	]]>
+		</if>
+		<if test="userBDay != null and userBDay != ''">
+			<![CDATA[	,USER_BDAY	]]>
+		</if>
+		<if test="userLvl != null and userLvl != ''">
+    		<![CDATA[	,USER_LVL	]]>
+    	</if>
+    	<if test="dmNoSq != null and dmNoSq != ''">
+    		<![CDATA[	,DM_NO_SQ	]]>
+    	</if>
+				,USER_AUTH
+				,USE_YN
+				,REG_ID
+				,REG_IP
+				,REG_DATE
+   		<![CDATA[
+   			)
+   			VALUES
+   			(
+   				'${userId}'
+   				,'${userPw}'
+   				,'${userName}'
+		]]>
+			<if test="userPicUrl != null and userPicUrl != ''">
+	    		<![CDATA[	,'${userPicUrl}'	]]>
+	    	</if>
+	    	<if test="userContact != null and userContact != ''">
+	    		<![CDATA[	,'${userContact}'	]]>
+	    	</if>
+ 			<if test="userEmail != null and userEmail != ''">
+ 				<![CDATA[	,'${userEmail}'	]]>
+ 			</if>
+ 			<if test="userBDay != null and userBDay != ''">
+ 				<![CDATA[	,'${userBDay}'	]]>
+ 			</if>
+ 			<if test="userLvl != null and userLvl != ''">
+	    		<![CDATA[	,'${userLvl}'	]]>
+	    	</if>
+	    	<if test="dmNoSq != null and dmNoSq != ''">
+	    		<![CDATA[	,'${dmNoSq}'	]]>
+	    	</if>
+   		<![CDATA[
+   				,'${userAuth}'
+   				,'Y'
+   				,'${strRegId}'
+   				,'${strRegIp}'
+   				,SYSDATE()
+   			)
+   		]]>
+   	</insert>
+   	
+   	<!-- 유저 정보 삭제 -->
+   	<update id="delUserData" parameterType="java.util.Map">
+   		<![CDATA[
+   			UPDATE USER_MAST
+   			SET	USE_YN = 'N'
+   			WHERE UM_NO_SQ_PK = #{umNoSqPk}
+   		]]>
+   	</update>
+</mapper>

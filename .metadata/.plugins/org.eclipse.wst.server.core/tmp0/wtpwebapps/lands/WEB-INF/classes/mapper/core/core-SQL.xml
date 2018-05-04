@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="core">
+
+	<!-- 공통코드를 조회한다. -->
+    <select id="selCommCodeListCnt" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT COUNT(*) AS TOTAL_ROW_COUNT
+    		FROM COMM_CODE_MAST CCM
+    		WHERE 1=1
+    	]]>
+    </select>
+    <!-- 공통코드를 조회한다. -->
+    <select id="selCommCodeList" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT 
+    			CCM.CCM_NO_SQ_PK,
+    			CCM.NAME,
+    			CCM.DETAIL,
+    			CCM.USE_YN,
+    			CCM.REG_ID,
+    			CCM.REG_IP,
+    			DATE_FORMAT(CCM.REG_DATE, '%d-%M-%Y %H:%i:%s') AS REG_DATE,
+    			CCM.UPDT_ID,
+    			CCM.UPDT_IP,
+    			DATE_FORMAT(CCM.UPDT_DATE, '%d-%M-%Y %H:%i:%s') AS UPDT_DATE
+    		FROM COMM_CODE_MAST CCM
+    		WHERE 1=1
+    	]]>
+    	<![CDATA[
+    		ORDER BY CCM.REG_DATE DESC
+    	]]>
+    	<if test="intDifference != null and intDifference != ''">
+    		<if test="(intOffset != null and intOffset != '') or intOffset == 0">
+	    		<![CDATA[ LIMIT	#{intDifference}	]]>
+    						
+	    		<![CDATA[ OFFSET #{intOffset}	]]>
+    						
+    		</if>
+    	</if>
+    </select>
+    
+    <!-- 공통코드 마스터 데이터 저장 -->
+    <insert id="insCommCode" parameterType="java.util.Map">
+    	<![CDATA[
+    		INSERT INTO COMM_CODE_MAST
+ 			(
+  				NAME,
+				DETAIL,
+				USE_YN,
+				REG_ID,
+				REG_IP,
+				REG_DATE
+ 			)
+   			VALUE
+   			(
+   				'${strName}',
+   				'${strDetail}',
+   				'Y',
+   				'${strRegId}',
+   				'${strRegIp}',
+   				SYSDATE()
+   			)
+    	]]>
+    </insert>
+    
+    <!-- 공통코드 디테일 데이터 조회 카운트 -->
+    <select id="selCommCodeDetailListCnt" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT COUNT(*) AS TOTAL_ROW_COUNT
+    		FROM COMM_CODE_DETAIL CCD
+    		LEFT JOIN COMM_CODE_MAST CCM ON (CCM.CCM_NO_SQ_PK = CCD.CCM_NO_SQ)
+    		WHERE CCM.CCM_NO_SQ_PK=${intCcmNoSq}
+    	]]>
+    </select>
+    
+    <!-- 공통코드 디테일 데이터 조회 -->
+    <select id="selCommCodeDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+    			CCD.CCD_NO_SQ_PK,
+    			CCD.CCM_NO_SQ,
+    			CCD.CODE,
+    			CCM.NAME AS CCM_NAME,
+    			CCD.NAME,
+    			CCD.INFO1,
+    			CCD.INFO2
+			FROM COMM_CODE_DETAIL CCD
+			LEFT JOIN COMM_CODE_MAST CCM ON (CCM.CCM_NO_SQ_PK = CCD.CCM_NO_SQ)
+			WHERE CCM.CCM_NO_SQ_PK=${intCcmNoSq}
+			ORDER BY CCD.CCD_NO_SQ_PK DESC
+    	]]>
+    	<if test="intDifference != null and intDifference != ''">
+    		<if test="(intOffset != null and intOffset != '') or intOffset == 0">
+	    		<![CDATA[ LIMIT	#{intDifference}	]]>
+    						
+	    		<![CDATA[ OFFSET #{intOffset}	]]>
+    		</if>
+    	</if>
+    </select>
+    
+    <!-- 공통코드 디테일 데이터 저장 -->
+    <insert id="insCommCodeDetail" parameterType="java.util.Map">
+    	<![CDATA[
+    		INSERT INTO COMM_CODE_DETAIL
+    		(
+    			CCM_NO_SQ
+    			,CODE
+    			,NAME
+    	]]>
+    		<if test="strInfo1 != null and strInfo1 != ''">
+    			<![CDATA[	,INFO1	]]>
+    		</if>
+    		<if test="strInfo2 != null and strInfo2 != ''">
+    			<![CDATA[	,INFO2	]]>
+    		</if>
+    	<![CDATA[
+    		)
+    		VALUES
+    		(
+    			#{intCcmNoSq}
+    			,'${strCode}'
+    			,'${strName}'
+    	]]>
+    			<if test="strInfo1 != null and strInfo1 != ''">
+    				<![CDATA[	,'${strInfo1}'	]]>
+	    		</if>
+	    		<if test="strInfo2 != null and strInfo2 != ''">
+	    			<![CDATA[	,'${strInfo2}'	]]>
+	    		</if>
+	    <![CDATA[
+    		)
+    	]]>
+    </insert>
+    
+    <!-- 공통코드 디테일 데이터 삭제 -->
+    <delete id="delCommCodeDtl" parameterType="java.util.Map">
+    	<![CDATA[
+    		DELETE FROM COMM_CODE_DETAIL
+    		WHERE CCD_NO_SQ_PK = #{intCcdNoSq}
+    	]]>
+    </delete>
+    
+    <!-- 공통코드 디테일 NAME을 조회한다. -->
+    <select id="selCommCodeName" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+    			CCM.NAME AS MAST_NAME,
+    			CCD.CCD_NO_SQ_PK,
+    			CCD.CCM_NO_SQ,
+    			CCD.CODE,
+    			CCD.NAME,
+    			CCD.INFO1,
+    			CCD.INFO2
+    		FROM COMM_CODE_DETAIL CCD
+    		LEFT JOIN COMM_CODE_MAST CCM ON(CCD.CCM_NO_SQ = CCM.CCM_NO_SQ_PK)
+    		WHERE CCM.NAME = '${strName}'
+    		ORDER BY CCD.CODE
+    	]]>
+    </select>
+    
+    <!-- 공통코드 디테일 NAME을 조건으로 다른 해당 값들을 조회한다.. -->
+    <select id="selCommList" parameterType="java.util.Map" resultType="java.util.Map">
+    	<![CDATA[
+    		SELECT
+    			CCM.NAME AS MAST_NAME,
+    			CCD.CCD_NO_SQ_PK,
+    			CCD.CCM_NO_SQ,
+    			CCD.CODE,
+    			CCD.NAME,
+    			CCD.INFO1,
+    			CCD.INFO2
+    		FROM COMM_CODE_DETAIL CCD
+    		LEFT JOIN COMM_CODE_MAST CCM ON(CCD.CCM_NO_SQ = CCM.CCM_NO_SQ_PK)
+    		WHERE 1=1
+    	]]>
+    	<if test='arrCommName != null and arrCommName != ""'>
+    		<foreach item="item" index="index" collection="arrCommName"
+    			open=" AND CCM.NAME IN (" separator="," close=")">
+    			#{item}	
+    		</foreach>
+    	</if>
+    	
+    	<![CDATA[
+    		ORDER BY CCD.CODE
+    	]]>
+    </select>
+</mapper>
